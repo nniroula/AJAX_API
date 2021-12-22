@@ -17,10 +17,47 @@
         image: <an image from the show data, or a default imege if no image exists, (image isn't needed until later)>
       }
  */
+
+
+      // import cdn version of axios
+    //   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+base_url = 'https://api.tvmaze.com ';
+/*
+for_first_end_point = ' https://api.tvmaze.com/search/shows?q=girls';  // eg
+second_end_point = 'https://api.tvmaze.com/shows/1/episodes'            // eg
+*/
+
 async function searchShows(query) {
   // TODO: Make an ajax request to the searchShows api.  Remove
   // hard coded data.
 
+    ////////
+
+    // async function getUser() {
+    try {
+        // let response = await axios.get('https://api.tvmaze.com/shows/1767');  // q=girls
+        let response = await axios.get(`https://api.tvmaze.com/shows?q=${query}`);  // q=girls
+        // now convert this response to human readable form(eg js dictionary)
+        // let parsedString = JSON.parse(response);
+        // console.log(parsedString);
+        let shows = response.data.map(result => {
+            let show = result.show;
+            return {
+              id: show.id,
+              name: show.name,
+              summary: show.summary,
+              image: show.image ? show.image.medium : MISSING_IMAGE_URL,
+            };
+          });
+          return shows;
+        
+    } catch (error) {
+        // console.error(error);
+        console.log(error);
+    }
+}
+/*
   return [
     {
       id: 1767,
@@ -30,7 +67,7 @@ async function searchShows(query) {
     }
   ]
 }
-
+*/
 
 
 /** Populate shows list:
@@ -85,6 +122,42 @@ async function getEpisodes(id) {
   // TODO: get episodes from tvmaze
   //       you can get this by making GET request to
   //       http://api.tvmaze.com/shows/SHOW-ID-HERE/episodes
+  //NOTE: pass parameter to the url query string in the form of a variable 
+    let response = await axios.get(`http://api.tvmaze.com/shows/${id}/episodes`);
+    let episodes = response.data.map(episode => ({
+        id: episode.id,
+        name: episode.name,
+        season: episode.season,
+        number: episode.number,
+    }));
 
-  // TODO: return array-of-episode-info, as described in docstring above
+    return episodes;
 }
+  // TODO: return array-of-episode-info, as described in docstring above
+
+// MOST OF THIS IS NOT MY ORIGINAL IDEA, help taken from solution. I am not able to fetch API data in my machine either in insomnia or vai curl command line.
+
+function arrayOfEpisodes(episodes) {
+    const $episodesList = $("#episodes-list");
+    $episodesList.empty();
+      
+    for (let episode of episodes) {
+      let $item = $(
+        `<li>
+           ${episode.name}
+           (season ${episode.season}, episode ${episode.number})
+         </li>
+        `);
+      $episodesList.append($item);
+    }
+    $("#episodes-area").show();
+  }
+  /** Handle click on show name. */
+  
+  $("#shows-list").on("click", ".get-episodes", async function handleEpisodeClick(evt) {
+    let showId = $(evt.target).closest(".Show").data("show-id");
+    let episodes = await getEpisodes(showId);
+    populateEpisodes(episodes);
+  });
+
+
